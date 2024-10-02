@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const Profile = () => {
+const Profile = ({ setAuthenticated }) => {  // Asegúrate de recibir setAuthenticated como prop
   const navigate = useNavigate();
 
   const [user, setUser] = useState({
@@ -35,8 +35,8 @@ const Profile = () => {
     // Eliminar tokens
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
-    // Redirigir al login
-    navigate("/login");
+    setAuthenticated(false); // Cambia el estado de autenticación a false
+    navigate("/login"); // Redirigir al login
   };
 
   const handleEditClick = () => {
@@ -57,10 +57,7 @@ const Profile = () => {
       <div className="bg-white p-6 rounded-lg shadow-md w-96">
         <h2 className="text-2xl font-bold mb-4 text-center">Perfil</h2>
         <div className="flex flex-col items-center justify-center mb-6">
-          <label
-            htmlFor="profilePicture"
-            className="block text-gray-700"
-          ></label>
+          <label htmlFor="profilePicture" className="block text-gray-700"></label>
           {isEditing ? (
             <>
               <input
@@ -95,9 +92,7 @@ const Profile = () => {
               type="text"
               id="alias"
               value={isEditing ? newAlias : user.alias}
-              onChange={
-                isEditing ? (e) => setNewAlias(e.target.value) : undefined
-              }
+              onChange={isEditing ? (e) => setNewAlias(e.target.value) : undefined}
               readOnly={!isEditing}
               className="mt-1 w-full border border-gray-300 rounded-md p-2"
             />
