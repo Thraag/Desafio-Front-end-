@@ -2,39 +2,63 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const Login: React.FC = () => {
+interface LoginProps {
+  setAuthenticated: (status: boolean) => void; // recibira un booleano, void es que no devolvera un valor.
+}
+
+const Login: React.FC<LoginProps> = ({ setAuthenticated }) => {
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // apenas el componente se monta seteamos el email del local storage en el input email
+  // Al montar el componente, se establece el email del local storage en el input email
   useEffect(() => {
-    // llamo el item por su llave y lo guardo en variable
     const storedEmail = localStorage.getItem('userEmail');
-    // si tengo el item setea email como la variable anterior para que inicie la pagina con el mail
     if (storedEmail) {
-      setEmail(storedEmail); 
+      setEmail(storedEmail);
     }
   }, []);
 
-  // se envia una solicitud post con axios, con la misma sintaxis, url y variables que deben ser email y token
-  // para ingresar
+  // Maneja el inicio de sesión
   const handleLogin = async () => {
     try {
       const response = await axios.post('https://neovc-api-1d2f751d3888.herokuapp.com/users/login/', {
         email,
-        token
+        token,
       });
-      // fundamental guardar el acceso  token para mantenernos logeados
+
+      // Guardar tokens en localStorage
       localStorage.setItem('accessToken', response.data.access);
-      // refresh token para usar todo el tiempo posible
       localStorage.setItem('refreshToken', response.data.refresh);
-      // redireccionar al perfil
+
+      // Cambiar estado de autenticación
+      setAuthenticated(true); // Llama a setAuthenticated para indicar que el usuario ha iniciado sesión
+
+      // Redireccionar al perfil
       navigate('/profile');
     } catch (error) {
-      console.error(error.response ? error.response.data : error);
-      setError('Error al iniciar sesión. Verifica tus credenciales.');
+      // Manejo de error mejorado
+      if (axios.isAxiosError(error)) {
+        // Verifica si es un error de Axios
+        if (error.response) {
+          // La solicitud se realizó y el servidor respondió con un código de estado que cae fuera del rango de 2xx
+          console.error("Error en la respuesta del servidor:", error.response.data);
+          setError(`Error: ${error.response.data.message || 'Ocurrió un error desconocido.'}`);
+        } else if (error.request) {
+          // La solicitud se realizó pero no se recibió respuesta
+          console.error("Error en la solicitud:", error.request);
+          setError('Error: No se recibió respuesta del servidor.');
+        } else {
+          // Algo sucedió al configurar la solicitud que lanzó un error
+          console.error("Error:", error.message);
+          setError(`Error: ${error.message}`);
+        }
+      } else {
+        // No es un error de Axios
+        console.error("Error inesperado:", error);
+        setError('Error inesperado. Inténtalo de nuevo.');
+      }
     }
   };
 
@@ -48,7 +72,7 @@ const Login: React.FC = () => {
             type="email"
             placeholder="Email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)} // Permite editar el email
+            onChange={(e) => setEmail(e.target.value)}
             required
             className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
@@ -59,7 +83,7 @@ const Login: React.FC = () => {
             type="text"
             placeholder="Token"
             value={token}
-            onChange={(e) => setToken(e.target.value)} // El token sigue vacío por defecto
+            onChange={(e) => setToken(e.target.value)}
             required
             className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
