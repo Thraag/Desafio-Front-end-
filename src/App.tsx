@@ -1,4 +1,3 @@
-// App.tsx
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { useState } from 'react';
 import RequestOTP from './components/RequestOTP'; // Asegúrate de tener la ruta correcta
@@ -10,7 +9,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false); // Estado para controlar la autenticación
 
   // Función para manejar la autenticación
-  const handleAuthentication = (status) => {
+  const handleAuthentication = (status: boolean) => { // Agrega el tipo booleano aquí
     setIsAuthenticated(status); // Cambia el estado de autenticación
   };
 
@@ -20,7 +19,7 @@ function App() {
       <Routes>
         <Route path="/" element={<RequestOTP />} /> {/* Mostrar el componente de solicitar OTP */}
         <Route path="/login" element={<Login setAuthenticated={handleAuthentication} />} /> {/* Pasar función a Login */}
-        <Route path="/profile" element={<Profile />} /> {/* Mostrar el perfil después de autenticarse */}
+        <Route path="/profile" element={<Profile setAuthenticated={handleAuthentication} />} /> {/* Pasar setAuthenticated al Profile */}
       </Routes>
     </Router>
   );
