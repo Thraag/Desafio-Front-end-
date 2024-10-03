@@ -1,42 +1,71 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-const Profile = ({ setAuthenticated }) => {  // Asegúrate de recibir setAuthenticated como prop
+interface ProfileProps {
+  setAuthenticated: (status: boolean) => void; // Propiedad para manejar la autenticación
+}
+
+export default function Profile({ setAuthenticated }: ProfileProps) {
   const navigate = useNavigate();
-
   const [user, setUser] = useState({
     alias: "Usuario123",
     email: "usuario@example.com",
     profilePicture: "https://picsum.photos/150",
   });
-
   const [isEditing, setIsEditing] = useState(false);
   const [newAlias, setNewAlias] = useState(user.alias);
   const [newProfilePicture, setNewProfilePicture] = useState(user.profilePicture);
 
   useEffect(() => {
-    // Verificar el token de acceso si no hay te redirecciona al login
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken) {
-      navigate("/login"); // Redirige si no hay token
+      navigate("/login");
     }
 
-    // Recuperar el correo electrónico almacenado
     const storedEmail = localStorage.getItem("userEmail");
     if (storedEmail) {
       setUser((prevUser) => ({
         ...prevUser,
-        email: storedEmail, // Actualizar el estado con el correo almacenado
+        email: storedEmail,
       }));
     }
   }, [navigate]);
 
-  const handleLogout = () => {
-    // Eliminar tokens
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    setAuthenticated(false); // Cambia el estado de autenticación a false
-    navigate("/login"); // Redirigir al login
+  const handleLogout = async () => {
+    try {
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (!refreshToken) {
+        console.error("No refresh token found");
+        setAuthenticated(false);
+        navigate("/login");
+        return;
+      }
+
+      const response = await axios.post(
+        "https://neovc-api-1d2f751d3888.herokuapp.com/users/logout/",
+        { refresh: refreshToken },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log(response.data);
+      if (response.data.message === "Logout successful.") {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        setAuthenticated(false);
+        navigate("/login");
+      }
+    } catch (error) {
+      if (error.response) {
+        console.error("Logout error:", error.response.data);
+      } else {
+        console.error("Error during logout:", error);
+      }
+    }
   };
 
   const handleEditClick = () => {
@@ -53,8 +82,8 @@ const Profile = ({ setAuthenticated }) => {  // Asegúrate de recibir setAuthent
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
-      <div className="bg-white p-6 rounded-lg shadow-md w-96">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+      <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold mb-4 text-center">Perfil</h2>
         <div className="flex flex-col items-center justify-center mb-6">
           <label htmlFor="profilePicture" className="block text-gray-700"></label>
@@ -71,14 +100,14 @@ const Profile = ({ setAuthenticated }) => {  // Asegúrate de recibir setAuthent
               <img
                 src={newProfilePicture}
                 alt="Profile Preview"
-                className="w-32 h-32 rounded-full mt-2 mb-4"
+                className="w-32 h-32 rounded-full mt-2 mb-4 object-cover"
               />
             </>
           ) : (
             <img
               src={user.profilePicture}
               alt="Profile"
-              className="w-32 h-32 rounded-full"
+              className="w-32 h-32 rounded-full object-cover"
             />
           )}
         </div>
@@ -124,13 +153,13 @@ const Profile = ({ setAuthenticated }) => {  // Asegúrate de recibir setAuthent
           <div className="flex space-x-2">
             <button
               onClick={handleSave}
-              className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
+              className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 flex-1"
             >
               Guardar
             </button>
             <button
               onClick={handleEditClick}
-              className="bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400"
+              className="bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 flex-1"
             >
               Cancelar
             </button>
@@ -139,13 +168,11 @@ const Profile = ({ setAuthenticated }) => {  // Asegúrate de recibir setAuthent
 
         <button
           onClick={handleLogout}
-          className="w-full bg-red-700 text-white py-2 rounded-md hover:bg-red-600 mt-4"
+          className="w-full bg-red-600 text-white py-2 rounded-md hover:bg-red-700 mt-4"
         >
           Cerrar Sesión
         </button>
       </div>
     </div>
   );
-};
-
-export default Profile;
+}
